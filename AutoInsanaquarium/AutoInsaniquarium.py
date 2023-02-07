@@ -1,43 +1,43 @@
-#project step 1: program will click on any pixels which are the color of a hungry fish
+#This program is an autoclicker which helps the user play PopCap's Insaniquarium.
+#In the game, the user manages an aquarium. 
+#They must feed their fish, collect coins which drop from their fish, and defend the tank from hungry aliens.
 
-import pyautogui
+#This program was originally designed to scan for specific pixel values (color of coins, hungry fish, etc.) and click them, but now it clicks blindly.
+#This results in a great increase in speed with minimal loss of efficiency/effectiveness.
+
+#There are multiple clicking settings.
+#1. Clicking
+    #General purpose type of click. 
+    #Clicks pixels throughout the entire tank, so it clicks coins and feeds hungry fish
+#2. Feeding
+    #Puts the cursor in one spot and only clicks there.
+    #Does not collect many coins, but allows the fish to group together in one spot to feed.
+    #Without this clicking type, fish would run around the tank chasing food, often dying before they reached it.
+#3. Collecting
+    #Scrapes the bottom of the screen, clicking only pixels in the lowest clickable part of the tank.
+    #Usually the best way to collect a massive amount of coins.
+    #May also be used to kill some aliens which only reside in the bottom of the tank
+
+#This program also includes hotkeys to select pets, buy fish, and buy/upgrade food and weapons
+    
+
+
+
 import threading
 import time
 import win32api, win32con
 from pynput.keyboard import Listener, KeyCode
 from pynput.mouse import Controller, Button
 import sys
+import random
 
 #monitor dimensions are different because it's emulating a different monitor: 960 x 700
 #note: not precise numbers but they get the job done
 X_MAX = 960
 Y_MAX = 700
 
+X_MIN = 0
 Y_MIN = 200
-
-clickCount = 0
-
-#monitor dimensions of actual laptop
-#X_MAX = 1080
-#Y_MAX = 1920
-
-#color of hungry fish: 
-FISH_R = 209
-FISH_G = 199
-FISH_B = 0
-
-#color of silver coin:
-SILVER_COIN_R = 181
-SILVER_COIN_G = 181
-SILVER_COIN_B = 181
-
-#color of gold coin:
-GOLD_COIN_R = 247
-GOLD_COIN_G = 181
-GOLD_COIN_B = 49
-
-#higher values make the color choices less picky
-COLOR_PRECISION = 80
 
 #toggles the program
 TOGGLE_KEY = KeyCode(char = "t")
@@ -63,15 +63,15 @@ COIN_COLLECT_KEY = KeyCode(char = "c")
 #press p to print the number of times the program has clicked
 PRINT_KEY = KeyCode(char = "p")
 
-#press f to select the pets Meryl, Amp, and Presto
+#press s to select the pets Meryl, Amp, and Presto
 SELECT_PETS_KEY = KeyCode(char = "s")
-
-#SPEED = 1 #number of seconds program waits before clicking again (not used at the moment)
 
 clicking = True
 feeding = False
 collecting = False
 mouse = Controller()
+clickCount = 0
+
 
 #wait 5 seconds to open insaniquarium
 
@@ -81,18 +81,16 @@ def clicker():
     while True:
         if clicking:
             if not feeding and not collecting:
-                #pic = pyautogui.screenshot(region = (0, Y_MIN, X_MAX, Y_MAX))
                 #just click on a bunch of pixels which ends up both feeding fish and collecting coins
-                for x in range (0, X_MAX, 100):
+
+                #offset the start by a small amount so it doesn't click in exactly the same spot every time (would miss some coins)
+                offset = createOffset(20)
+                for x in range (X_MIN - offset, X_MAX, 100):
                     #if settings change in the middle of a sweep, program does not waste time continuing a sweep
                     if not clicking or feeding or collecting:
                         break
                     for y in range(Y_MIN, Y_MAX, 50):
                         mouseSetAndClick(x,y)
-
-                        #r, g, b = pic.getpixel((x, y))    relic from when the program tried to read color 
-                        #                                   values from the screen and click accordingly
-                            
             elif feeding:
                 feed()
 
@@ -115,24 +113,27 @@ def toggleEvent(key):
     if key == TOGGLE_KEY:
         global clicking
         clicking = not clicking
+
     if key == UPGRADE_KEY:
         upgradeGun()#attmept to upgrade ameneties with the most expensive items first, then continue in descending order
         upgradeFood()
+
     if key == FEED_KEY:
         feeding = not feeding
         collecting = False
+
     if key == COIN_COLLECT_KEY:
         collecting = not collecting
         feeding = False
+
     if key == PRINT_KEY:
         print(clickCount)
+
     if key == SELECT_PETS_KEY:
         selectPets()
 
     if key == FISH_1_KEY or key == FISH_2_KEY or key == FISH_3_KEY:
         buyFish(key)
-
-
 
 def mouseSetAndClick(x, y):
     win32api.SetCursorPos((x, y))
@@ -143,7 +144,6 @@ def mouseSetAndClick(x, y):
 
     global clickCount
     clickCount+= 1
-
 
 def buyGuppy():
     mouseSetAndClick(70, 50)
@@ -172,11 +172,12 @@ def buyFish(fish):
 
 
 def collect():
-    for x in range(0, X_MAX, 60):
-        mouseSetAndClick(x, Y_MAX - 200)
-    for x in range(30, X_MAX - 30, 60):
-        mouseSetAndClick(x, Y_MAX - 150)
+    offset = createOffset(20)
 
+    for x in range(X_MIN - offset, X_MAX, 60):
+        mouseSetAndClick(x, Y_MAX - 350 - offset)
+
+#user can select three pets before the start of the game. My personal favorite three pets are hard-coded here
 def selectPets():
     #click Meryl
     mouseSetAndClick(230, 450)
@@ -187,6 +188,9 @@ def selectPets():
     #click Presto
     mouseSetAndClick(850, 600)
 
+def createOffset(range):
+    return random.randint(0, range)
+
 
             
 
@@ -196,10 +200,34 @@ click_thread.start()
 with Listener(on_press = toggleEvent) as listener:
     listener.join()
 
-#color searching function junkyard vvvvvvv
+###########################################################################################################################################################################
+
+#color searching function junkyard
 
 #def checkOneColor(colorToCheck, COLOR, PRECISION):
 #    return colorToCheck in range(COLOR - PRECISION, COLOR + PRECISION)
 
 #def checkRGB(rCheck, gCheck, bCheck, R, G, B, PRECISION):
 #    return checkOneColor(rCheck, R, PRECISION) and checkOneColor(gCheck, G, PRECISION) and checkOneColor(bCheck, B, PRECISION)
+
+#monitor dimensions of actual laptop
+#X_MAX = 1080
+#Y_MAX = 1920
+
+##color of hungry fish: 
+#FISH_R = 209
+#FISH_G = 199
+#FISH_B = 0
+
+##color of silver coin:
+#SILVER_COIN_R = 181
+#SILVER_COIN_G = 181
+#SILVER_COIN_B = 181
+
+##color of gold coin:
+#GOLD_COIN_R = 247
+#GOLD_COIN_G = 181
+#GOLD_COIN_B = 49
+
+##higher values make the color choices less picky
+#COLOR_PRECISION = 80
