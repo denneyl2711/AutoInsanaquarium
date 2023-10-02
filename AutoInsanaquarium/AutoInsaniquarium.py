@@ -39,7 +39,9 @@ Y_MAX = 700
 X_MIN = 0
 Y_MIN = 200
 
-#toggles the program
+PURCHASE_X = 40 #height of every purchase button (buy fish, upgrade gun, etc.)
+
+#toggles the clicking on and off
 TOGGLE_KEY = KeyCode(char = "t")
 
 #press u to upgrade gun, food count, food quality, and buy a guppy, in that order
@@ -66,16 +68,14 @@ PRINT_KEY = KeyCode(char = "p")
 #press s to select the pets Meryl, Amp, and Presto
 SELECT_PETS_KEY = KeyCode(char = "s")
 
+#press e to purchase an egg
+EGG_KEY = KeyCode(char = "e")
+
 clicking = True
 feeding = False
 collecting = False
 mouse = Controller()
 clickCount = 0
-
-
-#wait 5 seconds to open insaniquarium
-
-time.sleep(5)
 
 def clicker():
     while True:
@@ -103,15 +103,16 @@ def clicker():
 #f places the cursor in one spot in the middle of the screen and clicks to feed the fish
 #c makes the cursor follow a horizontal line along the bottom of the screen and click to collect as many coins as possible
 #p prints the number of times the program has clicked
+#e buys an egg
 #2 buys fish 2 (usually carnivore) 30 times
 #3 buys fish 3 (usually ultravore) 10 times
 
 def toggleEvent(key):
     global feeding
     global collecting
+    global clicking
 
     if key == TOGGLE_KEY:
-        global clicking
         clicking = not clicking
 
     if key == UPGRADE_KEY:
@@ -134,6 +135,9 @@ def toggleEvent(key):
 
     if key == FISH_1_KEY or key == FISH_2_KEY or key == FISH_3_KEY:
         buyFish(key)
+   
+    if key == EGG_KEY:
+        buyEgg()
 
 def mouseSetAndClick(x, y):
     win32api.SetCursorPos((x, y))
@@ -146,15 +150,15 @@ def mouseSetAndClick(x, y):
     clickCount+= 1
 
 def buyGuppy():
-    mouseSetAndClick(70, 50)
+    mouseSetAndClick(70, PURCHASE_X)
 
 def upgradeFood():
     #upgrade food count, then quality
-    mouseSetAndClick(240, 50)
-    mouseSetAndClick(140, 50)
+    mouseSetAndClick(180, PURCHASE_X)
+    mouseSetAndClick(100, PURCHASE_X)
 
 def upgradeGun():
-    mouseSetAndClick(600, 50)
+    mouseSetAndClick(380, PURCHASE_X)
 
 def feed():
     mouseSetAndClick(300, 200)
@@ -162,13 +166,16 @@ def feed():
 def buyFish(fish):
     if fish == FISH_1_KEY: #buy 10 guppys/breeders
         for i in range(10):
-            mouseSetAndClick(70, 50)
+            mouseSetAndClick(70, PURCHASE_X)
     elif fish == FISH_2_KEY:#buy 30 carnivores/guppysnatchers
         for i in range(30):
-            mouseSetAndClick(360, 50)
+            mouseSetAndClick(230, PURCHASE_X)
     elif fish == FISH_3_KEY:#buy 10 ultravores/beetlesnatchers
         for i in range(10):
-            mouseSetAndClick(450, 50)
+            mouseSetAndClick(320, PURCHASE_X)
+            
+def buyEgg():
+    mouseSetAndClick(460, PURCHASE_X)
 
 
 def collect():
@@ -190,44 +197,14 @@ def selectPets():
 
 def createOffset(range):
     return random.randint(0, range)
+    
+def main():
+    time.sleep(5) #give user time to navigate to the game- before clicking starts
+    click_thread = threading.Thread(target = clicker)
+    click_thread.start()
 
-
-            
-
-click_thread = threading.Thread(target = clicker)
-click_thread.start()
-
-with Listener(on_press = toggleEvent) as listener:
-    listener.join()
-
-###########################################################################################################################################################################
-
-#color searching function junkyard
-
-#def checkOneColor(colorToCheck, COLOR, PRECISION):
-#    return colorToCheck in range(COLOR - PRECISION, COLOR + PRECISION)
-
-#def checkRGB(rCheck, gCheck, bCheck, R, G, B, PRECISION):
-#    return checkOneColor(rCheck, R, PRECISION) and checkOneColor(gCheck, G, PRECISION) and checkOneColor(bCheck, B, PRECISION)
-
-#monitor dimensions of actual laptop
-#X_MAX = 1080
-#Y_MAX = 1920
-
-##color of hungry fish: 
-#FISH_R = 209
-#FISH_G = 199
-#FISH_B = 0
-
-##color of silver coin:
-#SILVER_COIN_R = 181
-#SILVER_COIN_G = 181
-#SILVER_COIN_B = 181
-
-##color of gold coin:
-#GOLD_COIN_R = 247
-#GOLD_COIN_G = 181
-#GOLD_COIN_B = 49
-
-##higher values make the color choices less picky
-#COLOR_PRECISION = 80
+    with Listener(on_press = toggleEvent) as listener:
+        listener.join()
+        
+if __name__ == '__main__':
+    main()
